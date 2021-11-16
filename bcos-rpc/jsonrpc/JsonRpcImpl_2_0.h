@@ -46,6 +46,7 @@ public:
     ~JsonRpcImpl_2_0() {}
 
     void initMethod();
+    void setClientID(std::string const& _clientID) { m_clientID = _clientID; }
 
 public:
     static std::string encodeData(bcos::bytesConstRef _data);
@@ -111,14 +112,8 @@ public:
     void getSyncStatus(
         std::string const& _groupID, std::string const& _nodeName, RespFunc _respFunc) override;
 
-    // TODO: implement getConsensusStatus
     void getConsensusStatus(
-        std::string const& _groupID, std::string const& _nodeName, RespFunc _respFunc) override
-    {
-        (void)_groupID;
-        (void)_nodeName;
-        (void)_respFunc;
-    }
+        std::string const& _groupID, std::string const& _nodeName, RespFunc _respFunc) override;
 
     void getSystemConfigByKey(std::string const& _groupID, std::string const& _nodeName,
         const std::string& _keyValue, RespFunc _respFunc) override;
@@ -225,7 +220,6 @@ public:
 
     void getConsensusStatusI(const Json::Value& _req, RespFunc _respFunc)
     {
-        (void)_req;
         getConsensusStatus(_req[0u].asString(), _req[1u].asString(), _respFunc);
     }
 
@@ -245,6 +239,12 @@ public:
         boost::ignore_unused(req);
         getPeers(_respFunc);
     }
+
+    void getGroupPeersI(const Json::Value& req, RespFunc _respFunc)
+    {
+        getGroupPeers(req[0u].asString(), _respFunc);
+    }
+
     // get all the groupID list
     void getGroupListI(const Json::Value& _req, RespFunc _respFunc)
     {
@@ -302,6 +302,13 @@ private:
         }
     }
 
+    void gatewayInfoToJson(Json::Value& _response, bcos::gateway::GatewayInfo::Ptr _gatewayInfo);
+    void gatewayInfoToJson(Json::Value& _response, bcos::gateway::GatewayInfo::Ptr _localP2pInfo,
+        bcos::gateway::GatewayInfosPtr _peersInfo);
+    void getGroupPeers(Json::Value& _response, std::string const& _groupID,
+        bcos::gateway::GatewayInfo::Ptr _localP2pInfo, bcos::gateway::GatewayInfosPtr _peersInfo);
+    void getGroupPeers(std::string const& _groupID, RespFunc _respFunc) override;
+
 private:
     std::unordered_map<std::string, std::function<void(Json::Value, RespFunc _respFunc)>>
         m_methodToFunc;
@@ -309,6 +316,9 @@ private:
     GroupManager::Ptr m_groupManager;
     bcos::gateway::GatewayInterface::Ptr m_gatewayInterface;
     NodeInfo m_nodeInfo;
+    // Note: here clientID must non-empty for the rpc will set clientID as source for the tx for
+    // tx-notify and the scheduler will not notify the tx-result if the tx source is empty
+    std::string m_clientID = "localRpc";
 
     struct TxHasher
     {
