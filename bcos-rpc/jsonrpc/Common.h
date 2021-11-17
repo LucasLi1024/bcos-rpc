@@ -110,7 +110,9 @@ inline Json::Value generateResponse(Error::Ptr _error)
 inline void nodeInfoToJson(Json::Value& _response, bcos::group::ChainNodeInfo::Ptr _nodeInfo)
 {
     _response["name"] = _nodeInfo->nodeName();
+    _response["nodeID"] = _nodeInfo->nodeID();
     _response["type"] = _nodeInfo->nodeType();
+    _response["microService"] = _nodeInfo->microService();
     _response["iniConfig"] = _nodeInfo->iniConfig();
     // set deployInfo
     _response["serviceInfo"] = Json::Value(Json::arrayValue);
@@ -128,7 +130,7 @@ inline void groupInfoToJson(Json::Value& _response, bcos::group::GroupInfo::Ptr 
 {
     _response["chainID"] = _groupInfo->chainID();
     _response["groupID"] = _groupInfo->groupID();
-    _response["gensisConfig"] = _groupInfo->genesisConfig();
+    _response["genesisConfig"] = _groupInfo->genesisConfig();
     _response["iniConfig"] = _groupInfo->iniConfig();
     _response["nodeList"] = Json::Value(Json::arrayValue);
     auto nodeInfos = _groupInfo->nodeInfos();

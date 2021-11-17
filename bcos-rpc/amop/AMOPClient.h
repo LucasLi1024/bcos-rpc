@@ -20,28 +20,27 @@
  */
 #pragma once
 #include <bcos-boostssl/websocket/WsService.h>
-#include <bcos-framework/interfaces/rpc/RPCInterface.h>
 #include <bcos-framework/interfaces/gateway/GatewayInterface.h>
+#include <bcos-framework/interfaces/rpc/RPCInterface.h>
 #include <bcos-framework/libprotocol/amop/AMOPRequest.h>
 #include <tarscpp/servant/Application.h>
+#define AMOP_CLIENT_LOG(level) BCOS_LOG(level) << LOG_BADGE("AMOPClient")
 namespace bcos
 {
 namespace rpc
 {
-class AMOPClient
+class AMOPClient : public std::enable_shared_from_this<AMOPClient>
 {
 public:
     using Ptr = std::shared_ptr<AMOPClient>;
     AMOPClient(std::shared_ptr<boostssl::ws::WsService> _wsService,
         std::shared_ptr<bcos::boostssl::ws::WsMessageFactory> _wsMessageFactory,
         std::shared_ptr<bcos::protocol::AMOPRequestFactory> _requestFactory,
-        bcos::gateway::GatewayInterface::Ptr _gateway, std::string const& _clientID,
-        std::string const& _gatewayServiceName)
+        bcos::gateway::GatewayInterface::Ptr _gateway, std::string const& _gatewayServiceName)
       : m_wsService(_wsService),
         m_wsMessageFactory(_wsMessageFactory),
         m_requestFactory(_requestFactory),
         m_gateway(_gateway),
-        m_clientID(_clientID),
         m_gatewayServiceName(_gatewayServiceName)
     {
         initMsgHandler();
@@ -77,6 +76,8 @@ public:
         }
     }
 
+    void setClientID(std::string const& _clientID) { m_clientID = _clientID; }
+
 protected:
     /// for AMOP requests from SDK
     virtual void onRecvSubTopics(std::shared_ptr<boostssl::ws::WsMessage> _msg,
@@ -103,7 +104,11 @@ protected:
         std::string const& _topic) const
     {
         ReadGuard l(x_topicToSessions);
-        return m_topicToSessions.at(_topic);
+        if (m_topicToSessions.count(_topic))
+        {
+            return m_topicToSessions.at(_topic);
+        }
+        return std::map<std::string, std::shared_ptr<boostssl::ws::WsSession>>();
     }
 
     void onClientDisconnect(std::shared_ptr<boostssl::ws::WsSession> _session);
@@ -122,13 +127,24 @@ protected:
 
     virtual void initMsgHandler();
 
+    void sendMessageToClient(std::string const& _topic,
+        std::shared_ptr<boostssl::ws::WsSession> _selectSession,
+        std::shared_ptr<boostssl::ws::WsMessage> _msg,
+        std::function<void(bcos::Error::Ptr&&, bytesPointer)> _callback);
+
+    bool trySendAMOPRequestToLocalNode(std::shared_ptr<boostssl::ws::WsSession> _session,
+        std::string const& _topic, std::shared_ptr<boostssl::ws::WsMessage> _msg);
+
+    void broadcastAMOPMessage(
+        std::string const& _topic, std::shared_ptr<boostssl::ws::WsMessage> _msg);
+
 protected:
     std::shared_ptr<boostssl::ws::WsService> m_wsService;
     std::shared_ptr<bcos::boostssl::ws::WsMessageFactory> m_wsMessageFactory;
     std::shared_ptr<bcos::protocol::AMOPRequestFactory> m_requestFactory;
 
     bcos::gateway::GatewayInterface::Ptr m_gateway;
-    std::string m_clientID;
+    std::string m_clientID = "localAMOP";
     std::string m_gatewayServiceName;
 
     // for AMOP
