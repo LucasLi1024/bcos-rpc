@@ -34,10 +34,15 @@
 #include <bcos-framework/interfaces/protocol/BlockHeaderFactory.h>
 #include <bcos-framework/interfaces/protocol/TransactionFactory.h>
 #include <bcos-framework/interfaces/protocol/TransactionMetaData.h>
+<<<<<<< HEAD
 #include <bcos-framework/interfaces/protocol/TransactionReceipt.h>
 #include <bcos-framework/interfaces/protocol/TransactionReceiptFactory.h>
 #include <bcos-framework/interfaces/sync/BlockSyncInterface.h>
 #include <bcos-framework/libprotocol/TransactionSubmitResultImpl.h>
+=======
+#include <bcos-framework/interfaces/protocol/TransactionReceiptFactory.h>
+#include <bcos-framework/interfaces/sync/BlockSyncInterface.h>
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
 #include <bcos-framework/testutils/faker/FakeScheduler.h>
 #include <bcos-framework/testutils/faker/FakeTxPool.h>
 #include <bcos-rpc/jsonrpc/JsonRpcImpl_2_0.h>
@@ -51,7 +56,10 @@ using namespace bcos::sync;
 using namespace bcos::consensus;
 using namespace bcos::group;
 using namespace bcos::gateway;
+<<<<<<< HEAD
 using namespace bcos::protocol;
+=======
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
 using namespace bcostars;
 
 namespace bcos
@@ -115,6 +123,7 @@ public:
         std::function<void(Error::Ptr)>) override
     {}
 
+<<<<<<< HEAD
     bcostars::protocol::BlockImpl::Ptr createFakeBlock()
     {
         auto cryptoSuite =
@@ -138,6 +147,15 @@ public:
             return _onGetBlock(nullptr, mockBlockPtr);
         }
         return _onGetBlock(nullptr, nullptr);
+=======
+    void asyncGetBlockDataByNumber(protocol::BlockNumber, int32_t _onlyHeader,
+        std::function<void(Error::Ptr, protocol::Block::Ptr)> _onGetBlock) override
+    {
+        if (_onlyHeader == bcos::ledger::HEADER)
+            _onGetBlock(nullptr, nullptr);
+        else if (_onlyHeader == bcos::ledger::HEADER || _onlyHeader == bcos::ledger::TRANSACTIONS)
+            _onGetBlock(nullptr, nullptr);
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
     }
 
     void asyncGetBlockNumber(
@@ -146,6 +164,7 @@ public:
         _onGetBlockNumber(nullptr, 4);
     }
 
+<<<<<<< HEAD
     void asyncGetBlockHashByNumber(protocol::BlockNumber _blockNumber,
         std::function<void(Error::Ptr, crypto::HashType const&)> _onGetBlockHash) override
     {
@@ -163,6 +182,16 @@ public:
             h256("0x067150c07dab4facb7160e075548007e067150c07dab4facb7160e075548007e"))
             return _onGetBlockNumber(nullptr, 6);
         return _onGetBlockNumber(nullptr, -1);
+=======
+    void asyncGetBlockHashByNumber(
+        protocol::BlockNumber, std::function<void(Error::Ptr, crypto::HashType const&)>) override
+    {}
+
+    void asyncGetBlockNumberByHash(crypto::HashType const&,
+        std::function<void(Error::Ptr, protocol::BlockNumber)> _onGetBlockNumber) override
+    {
+        _onGetBlockNumber(nullptr, 6);
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
     }
 
     void asyncGetBatchTxsByHashList(crypto::HashListPtr, bool,
@@ -179,13 +208,21 @@ public:
             int64_t _failedTxCount, protocol::BlockNumber _latestBlockNumber)>
             _onGetTransCnt) override
     {
+<<<<<<< HEAD
         return _onGetTransCnt(nullptr, 5, 6, 7);
+=======
+        _onGetTransCnt(nullptr, 5, 6, 7);
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
     }
 
     void asyncGetSystemConfigByKey(std::string const&,
         std::function<void(Error::Ptr, std::string, protocol::BlockNumber)> _onGetSysConf) override
     {
+<<<<<<< HEAD
         return _onGetSysConf(nullptr, "mockSysConfBykey", 3);
+=======
+        _onGetSysConf(nullptr, "mockSysConfBykey", 3);
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
     }
 
     void asyncGetNodeListByType(std::string const& _consensusType,
@@ -270,6 +307,7 @@ public:
     }
 };
 
+<<<<<<< HEAD
 // class FakeTransactionReceipt : public bcos::protocol::TransactionReceipt
 // {
 // public:
@@ -311,6 +349,8 @@ public:
 // //         bcos::crypto::CryptoSuite::Ptr m_fakeCryptoSuite;
 // };
 
+=======
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
 class RpcFakeTxPool : public FakeTxPool
 {
 public:
@@ -326,6 +366,7 @@ public:
     {
         _onGetPendingTransSize(nullptr, 5);
     }
+<<<<<<< HEAD
 
     void asyncSubmit(bytesPointer, TxSubmitCallback) override
     {
@@ -340,6 +381,8 @@ public:
 
         return;
     }
+=======
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
 };
 
 class FakeConsensus : public bcos::consensus::ConsensusInterface

@@ -112,6 +112,26 @@ BOOST_AUTO_TEST_CASE(testGetTotalTransactionCount)
     totalTransCntPromise.get_future().get();
 }
 
+<<<<<<< HEAD
+=======
+BOOST_AUTO_TEST_CASE(testGetBlockByNumber)
+{
+    int64_t blockNumber = 6;
+    auto jsonRpc = createJsonRpc("getBlockByNumberGroupID", "getBlockByNumberNodeName");
+
+    std::promise<void> getBlockByNumberPromise;
+    jsonRpc->getBlockByNumber("getBlockByNumberGroupID", "getBlockByNumberNodeName", blockNumber,
+        true, true, [&](bcos::Error::Ptr _error, Json::Value& _blockValue) {
+            Json::Value jResp;
+            BOOST_CHECK(!_error);
+            BOOST_CHECK(_blockValue == jResp);
+
+            getBlockByNumberPromise.set_value();
+        });
+    getBlockByNumberPromise.get_future().get();
+}
+
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
 BOOST_AUTO_TEST_CASE(testGetGroupInfo)
 {
     auto jsonRpc = createJsonRpc("getGroupInfoGroupID", "getGroupInfoNodeName");
@@ -278,6 +298,7 @@ BOOST_AUTO_TEST_CASE(testGetObserverList)
     getObserverListPromise.get_future().get();
 }
 
+<<<<<<< HEAD
 BOOST_AUTO_TEST_CASE(testGetBlockByNumber)
 {
     int64_t blockNumber = 5;
@@ -348,6 +369,59 @@ BOOST_AUTO_TEST_CASE(testGetBlockHashByNumber)
 //             sendTransactionPromise.set_value();
 //         });
 //     sendTransactionPromise.get_future().get();
+=======
+// BOOST_AUTO_TEST_CASE(testGetBlockByHash)
+// {
+//     std::string groupID = "TestGroup";
+//     std::string nodeName = "testGetBlockByHash";
+//     bcos::crypto::HashType blockHash =
+//     "0x067150c07dab4facb7160e075548007e067150c07dab4facb7160e075548007e"; auto jsonRpc =
+//     createJsonRpc(groupID, nodeName);
+
+//     std::promise<void> getBlockByHashPromise;
+//     jsonRpc->getBlockByHash(
+//         groupID, nodeName, blockHash, true, true, [&](bcos::Error::Ptr _error, Json::Value&
+//         _TransCnt)
+//         {
+//             BOOST_CHECK(!_error);
+//             BOOST_CHECK(_TransCnt["transactionCount"] == 5);
+//             BOOST_CHECK(_TransCnt["failedTransactionCount"] == 6);
+//             BOOST_CHECK(_TransCnt["blockNumber"] == 7);
+
+//             getBlockByHashPromise.set_value();
+//         });
+//     getBlockByHashPromise.get_future().get();
+// }
+
+// BOOST_AUTO_TEST_CASE(testCall)
+// {
+//     RespFunc respFunc;
+//     int64_t blockNumber = 0;
+//     std::string to = "";
+//     std::string data = "testData";
+//     rpc->call(groupId, nodeName, to, data, respFunc);
+//     // std::cout << "1111111111111111111111111111" << endl;
+//     // // std::cout << type(respFunc) << endl;
+//     // std::cout << respFunc << endl;
+
+//     BOOST_CHECK(respFunc["blockNumber"] ==
+//                 "447adc7975a23443135577c2272417d8682e709bf5868981f4d301f1cee561c8929f4a8ef604365a45"
+//                 "025bde01c1e67875f398fb564d5c73ffaa65b42c7f4586");
+//     // BOOST_CHECK_THROW(rpc->call(invalidGroup, nodeName, blockNumber, true, true, respFunc),
+//     // JsonRpcException);
+// }
+
+// BOOST_AUTO_TEST_CASE(testSendTransaction)
+// {
+//     RespFunc respFunc;
+//     rpc->sendTransaction(groupId, nodeName, "TESTdata", false, respFunc);
+
+//      (respFunc["input"] ==
+//                 "447adc7975a23443135577c2272417d8682e709bf5868981f4d301f1cee561c8929f4a8ef604365a45"
+//                 "025bde01c1e67875f398fb564d5c73ffaa65b42c7f4586");
+//     // BOOST_CHECK_THROW(rpc->sendTransaction(invalidGroup, nodeName, "FAILEDdata", false,
+//     // respFunc), JsonRpcException);
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
 // }
 
 // BOOST_AUTO_TEST_CASE(testGetTransaction)
@@ -379,6 +453,7 @@ BOOST_AUTO_TEST_CASE(testGetBlockHashByNumber)
 //     // respFunc), JsonRpcException);
 // }
 
+<<<<<<< HEAD
 // BOOST_AUTO_TEST_CASE(testCall)
 // {
 //     RespFunc respFunc;
@@ -394,6 +469,18 @@ BOOST_AUTO_TEST_CASE(testGetBlockHashByNumber)
 //                 "447adc7975a23443135577c2272417d8682e709bf5868981f4d301f1cee561c8929f4a8ef604365a45"
 //                 "025bde01c1e67875f398fb564d5c73ffaa65b42c7f4586");
 //     // BOOST_CHECK_THROW(rpc->call(invalidGroup, nodeName, blockNumber, true, true, respFunc),
+=======
+// BOOST_AUTO_TEST_CASE(testGetBlockHashByNumber)
+// {
+//     int64_t blockNumber = 0;
+//     Json::Value response = rpc->getBlockHashByNumber(groupId, nodeName, blockNumber, respFunc);
+
+//     BOOST_CHECK(response ==
+//                 "447adc7975a23443135577c2272417d8682e709bf5868981f4d301f1cee561c8929f4a8ef604365a45"
+//                 "025bde01c1e67875f398fb564d5c73ffaa65b42c7f4586");
+//     // BOOST_CHECK_THROW(rpc->getBlockHashByNumber(invalidGroup, nodeName, blockNumber,
+//     respFunc),
+>>>>>>> 6e6f128 (feature: Add RPC unittests)
 //     // JsonRpcException);
 // }
 
