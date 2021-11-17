@@ -87,15 +87,8 @@ void Rpc::asyncNotifyBlockNumber(std::string const& _groupID, std::string const&
         _callback(nullptr);
     }
     m_jsonRpcImpl->groupManager()->updateGroupBlockInfo(_groupID, _nodeName, _blockNumber);
-    WEBSOCKET_SERVICE(INFO) << LOG_BADGE("asyncNotifyBlockNumber")
-                            << LOG_KV("blockNumber", _blockNumber) << LOG_KV("ss size", ss.size());
-}
-
-void Rpc::asyncNotifyTransactionResult(std::string const&,
-    [[maybe_unused]] const std::string_view& groupID, bcos::crypto::HashType txHash,
-    bcos::protocol::TransactionSubmitResult::Ptr result)
-{
-    m_jsonRpcImpl->notifyTransactionResult(txHash, std::move(result));
+    WEBSOCKET_SERVICE(TRACE) << LOG_BADGE("asyncNotifyBlockNumber")
+                             << LOG_KV("blockNumber", _blockNumber) << LOG_KV("ss size", ss.size());
 }
 
 void Rpc::asyncNotifyGroupInfo(

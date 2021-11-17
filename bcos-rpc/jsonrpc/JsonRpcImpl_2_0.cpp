@@ -235,7 +235,7 @@ void JsonRpcImpl_2_0::parseRpcResponseJson(
                 _jsonResponse.result = root["result"];
             }
 
-            RPC_IMPL_LOG(DEBUG) << LOG_BADGE("parseRpcResponseJson")
+            RPC_IMPL_LOG(TRACE) << LOG_BADGE("parseRpcResponseJson")
                                 << LOG_KV("jsonrpc", _jsonResponse.jsonrpc)
                                 << LOG_KV("id", _jsonResponse.id)
                                 << LOG_KV("error", _jsonResponse.error.toString())
@@ -473,7 +473,9 @@ void JsonRpcImpl_2_0::toJsonResp(
         Json::Value jTx;
         if (_onlyTxHash)
         {
-            jTx = toHexStringWithPrefix(_blockPtr->transactionHash(index));
+            // Note: should not call transactionHash for in the common cases transactionHash maybe
+            // empty
+            jTx = toHexStringWithPrefix(_blockPtr->transaction(index)->hash());
         }
         else
         {
@@ -521,9 +523,6 @@ void JsonRpcImpl_2_0::call(std::string const& _groupID, std::string const& _node
 void JsonRpcImpl_2_0::sendTransaction(std::string const& _groupID, std::string const& _nodeName,
     const std::string& _data, bool _requireProof, RespFunc _respFunc)
 {
-    RPC_IMPL_LOG(TRACE) << LOG_DESC("sendTransaction") << LOG_KV("group", _groupID)
-                        << LOG_KV("node", _nodeName);
-
     auto self = std::weak_ptr<JsonRpcImpl_2_0>(shared_from_this());
     auto transactionDataPtr = decodeData(_data);
     auto nodeService = getNodeService(_groupID, _nodeName, "sendTransaction");
@@ -532,7 +531,8 @@ void JsonRpcImpl_2_0::sendTransaction(std::string const& _groupID, std::string c
     auto tx =
         nodeService->blockFactory()->transactionFactory()->createTransaction(*transactionDataPtr);
     auto txHash = tx->hash();  // FIXME: try pass tx to backend?
-
+    RPC_IMPL_LOG(TRACE) << LOG_DESC("sendTransaction") << LOG_KV("group", _groupID)
+                        << LOG_KV("node", _nodeName) << LOG_KV("hash", txHash.abridged());
     auto submitCallback =
         [_groupID, _requireProof, transactionDataPtr, respFunc = std::move(_respFunc), txHash,
             self](Error::Ptr _error,
@@ -545,20 +545,10 @@ void JsonRpcImpl_2_0::sendTransaction(std::string const& _groupID, std::string c
 
             if (_error && _error->errorCode() != bcos::protocol::CommonError::SUCCESS)
             {
-                // Remove this callback from hash map
-                decltype(m_txHash2Callback)::const_accessor it;
-                rpc->m_txHash2Callback.find(it, txHash);
-                if (!it.empty())
-                {
-                    rpc->m_txHash2Callback.erase(it);
-                }
-
                 RPC_IMPL_LOG(ERROR)
-                    << LOG_BADGE("sendTransaction")
-                    << LOG_KV("data", base64Encode(ref(*transactionDataPtr)))
-                    << LOG_KV("requireProof", _requireProof)
-                    << LOG_KV("errorCode", _error ? _error->errorCode() : 0)
-                    << LOG_KV("errorMessage", _error ? _error->errorMessage() : "success");
+                    << LOG_BADGE("sendTransaction") << LOG_KV("requireProof", _requireProof)
+                    << LOG_KV("hash", txHash.abridged()) << LOG_KV("code", _error->errorCode())
+                    << LOG_KV("message", _error->errorMessage());
                 Json::Value jResp;
                 respFunc(_error, jResp);
 
@@ -590,10 +580,6 @@ void JsonRpcImpl_2_0::sendTransaction(std::string const& _groupID, std::string c
                 respFunc(nullptr, jResp);
             }
         };
-
-    RPC_IMPL_LOG(TRACE) << "Writing tx: " << txHash.hex() << " into hash map";
-
-    m_txHash2Callback.emplace(txHash, submitCallback);
     txpool->asyncSubmit(transactionDataPtr, submitCallback);
 }
 
@@ -1240,24 +1226,6 @@ void JsonRpcImpl_2_0::getGroupNodeInfo(
     }
     _respFunc(nullptr, response);
 }
-void JsonRpcImpl_2_0::notifyTransactionResult(
-    bcos::crypto::HashType txHash, bcos::protocol::TransactionSubmitResult::Ptr result)
-{
-    decltype(m_txHash2Callback)::const_accessor it;
-    auto found = m_txHash2Callback.find(it, txHash);
-
-    if (!found)
-    {
-        RPC_IMPL_LOG(ERROR) << "Notify transaction: " << txHash.hex() << " not found!";
-        return;
-    }
-    auto& callback = it->second;
-    callback(nullptr, std::move(result));
-
-    m_txHash2Callback.erase(it);
-}
-
-
 void JsonRpcImpl_2_0::gatewayInfoToJson(
     Json::Value& _response, bcos::gateway::GatewayInfo::Ptr _gatewayInfo)
 {
