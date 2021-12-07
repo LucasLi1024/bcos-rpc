@@ -32,9 +32,10 @@ using namespace bcos::boostssl::ws;
 void Rpc::start()
 {
     // start event sub
-    // m_eventSub->start();
+    m_eventSub->start();
     // start websocket service
     m_wsService->start();
+    m_amopClient->start();
     BCOS_LOG(INFO) << LOG_DESC("[RPC][RPC][start]") << LOG_DESC("start rpc successfully");
 }
 
@@ -51,6 +52,11 @@ void Rpc::stop()
     {
         m_eventSub->stop();
     }
+    if (m_amopClient)
+    {
+        m_amopClient->stop();
+    }
+
     BCOS_LOG(INFO) << LOG_DESC("[RPC][RPC][stop]") << LOG_DESC("stop rpc successfully");
 }
 

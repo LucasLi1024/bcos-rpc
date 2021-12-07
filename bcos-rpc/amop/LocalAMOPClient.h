@@ -36,6 +36,16 @@ public:
       : AMOPClient(_wsService, _wsMessageFactory, _requestFactory, _gateway, "localGateway")
     {}
 
+    // Note: must with empty implementation to in case of start the m_gatewayStatusDetector
+    void start() override { m_gatewayActivated.store(true); }
+
+    bool onGatewayInactivated(
+        std::shared_ptr<boostssl::ws::WsMessage>, std::shared_ptr<boostssl::ws::WsSession>) override
+    {
+        return false;
+    }
+
+    bool gatewayInactivated() override { return false; }
 
 protected:
     void subscribeTopicToAllNodes(std::string const& _topicInfo) override

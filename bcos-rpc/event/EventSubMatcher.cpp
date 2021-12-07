@@ -18,6 +18,8 @@
  * @date 2021-09-10
  */
 
+#include "libutilities/BoostLog.h"
+#include <bcos-rpc/event/Common.h>
 #include <bcos-rpc/event/EventSubMatcher.h>
 
 using namespace bcos;
@@ -45,27 +47,26 @@ uint32_t EventSubMatcher::matches(EventSubParams::ConstPtr _params,
     std::size_t logIndex = 0;
     for (const auto& logEntry : logEntries)
     {
+        if (matches(_params, logEntry))
+        {
+            count++;
+
+            Json::Value jResp;
+            jResp["blockNumber"] = _receipt->blockNumber();
+            jResp["address"] = std::string(logEntry.address());
+            jResp["data"] = toHexStringWithPrefix(logEntry.data());
+            jResp["logIndex"] = (uint64_t)logIndex;
+            jResp["transactionHash"] = _tx->hash().hexPrefixed();
+            jResp["transactionIndex"] = (uint64_t)_txIndex;
+            jResp["topics"] = Json::Value(Json::arrayValue);
+            for (const auto& topic : logEntry.topics())
+            {
+                jResp["topics"].append(topic.hexPrefixed());
+            }
+            _result.append(jResp);
+        }
+
         logIndex += 1;
-        if (!matches(_params, logEntry))
-        {
-            continue;
-        }
-        count++;
-
-        Json::Value jResp;
-        jResp["blockNumber"] = _receipt->blockNumber();
-        jResp["address"] = std::string(logEntry.address());
-        jResp["data"] = toHexStringWithPrefix(logEntry.data());
-        jResp["logIndex"] = (uint64_t)logIndex;
-        jResp["transactionHash"] = _tx->hash().hexPrefixed();
-        jResp["transactionIndex"] = (uint64_t)_txIndex;
-        jResp["topics"] = Json::Value(Json::arrayValue);
-        for (const auto& topic : logEntry.topics())
-        {
-            jResp["topics"].append(topic.hexPrefixed());
-        }
-
-        _result.append(jResp);
     }
 
     return count;
@@ -77,6 +78,9 @@ bool EventSubMatcher::matches(
     const auto& addresses = _params->addresses();
     const auto& topics = _params->topics();
 
+    // EVENT_MATCH(TRACE) << LOG_BADGE("matches") << LOG_KV("address", _logEntry.address())
+    //                    << LOG_KV("logEntry topics", _logEntry.topics().size());
+
     // An empty address array matches all values otherwise log.address must be in addresses
     if (!addresses.empty() && !addresses.count(std::string(_logEntry.address())))
     {
@@ -87,8 +91,8 @@ bool EventSubMatcher::matches(
     for (unsigned i = 0; i < EVENT_LOG_TOPICS_MAX_INDEX; ++i)
     {
         const auto& logTopics = _logEntry.topics();
-        // The corresponding topic must be the same
-        if (!topics[i].empty() && (logTopics.size() < i || !topics[i].count(logTopics[i].hex())))
+        if (topics.size() > i && !topics[i].empty() &&
+            (logTopics.size() <= i || !topics[i].count(logTopics[i].hex())))
         {
             isMatch = false;
             break;

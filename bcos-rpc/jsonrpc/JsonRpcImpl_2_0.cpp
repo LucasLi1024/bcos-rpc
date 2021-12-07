@@ -391,7 +391,7 @@ void JsonRpcImpl_2_0::toJsonResp(Json::Value& jResp, const std::string& _txHash,
     for (const auto& logEntry : _transactionReceiptPtr->logEntries())
     {
         Json::Value jLog;
-        jLog["address"] = toHexStringWithPrefix(logEntry.address());
+        jLog["address"] = std::string(logEntry.address());
         jLog["topic"] = Json::Value(Json::arrayValue);
         for (const auto& topic : logEntry.topics())
         {
@@ -534,7 +534,7 @@ void JsonRpcImpl_2_0::sendTransaction(std::string const& _groupID, std::string c
     RPC_IMPL_LOG(TRACE) << LOG_DESC("sendTransaction") << LOG_KV("group", _groupID)
                         << LOG_KV("node", _nodeName) << LOG_KV("hash", txHash.abridged());
     auto submitCallback =
-        [_groupID, _requireProof, transactionDataPtr, respFunc = std::move(_respFunc), txHash,
+        [_groupID, _requireProof, tx, transactionDataPtr, respFunc = std::move(_respFunc), txHash,
             self](Error::Ptr _error,
             bcos::protocol::TransactionSubmitResult::Ptr _transactionSubmitResult) {
             auto rpc = self.lock();
@@ -571,12 +571,15 @@ void JsonRpcImpl_2_0::sendTransaction(std::string const& _groupID, std::string c
                     (int32_t)bcos::protocol::TransactionStatus::None)
                 {
                     std::stringstream errorMsg;
-                    errorMsg << (bcos::protocol::TransactionStatus)(
-                        _transactionSubmitResult->status());
+                    errorMsg
+                        << (bcos::protocol::TransactionStatus)(_transactionSubmitResult->status());
                     jResp["errorMessage"] = errorMsg.str();
                 }
                 toJsonResp(jResp, hexPreTxHash, _transactionSubmitResult->transactionReceipt());
-                jResp["input"] = "";  // TODO: add input
+                jResp["input"] = toHexStringWithPrefix(tx->input());
+                jResp["to"] = string(tx->to());
+                jResp["from"] = toHexStringWithPrefix(tx->sender());
+                // TODO: notify transactionProof
                 respFunc(nullptr, jResp);
             }
         };
@@ -866,22 +869,18 @@ void JsonRpcImpl_2_0::getCode(std::string const& _groupID, std::string const& _n
                         << LOG_KV("group", _groupID) << LOG_KV("node", _nodeName);
 
     auto nodeService = getNodeService(_groupID, _nodeName, "getCode");
-    Json::Value response;
-    response["msg"] = "unimplemented method getConde";
-    _callback(nullptr, response);
-// TODO: scheduler provid asyncGetCode interface
-#if 0
+
     auto scheduler = nodeService->scheduler();
-    scheduler->asyncGetCode(
-        std::string_view(_contractAddress), [_contractAddress, _respFunc](const Error::Ptr& _error,
-                                                const std::shared_ptr<bytes>& _codeData) {
+    scheduler->getCode(
+        std::string_view(_contractAddress), [_contractAddress, callback = std::move(_callback)](
+                                                Error::Ptr _error, bcos::bytes _codeData) {
             std::string code;
             if (!_error || (_error->errorCode() == bcos::protocol::CommonError::SUCCESS))
             {
-                if (_codeData)
+                if (!_codeData.empty())
                 {
                     code = toHexStringWithPrefix(
-                        bcos::bytesConstRef(_codeData->data(), _codeData->size()));
+                        bcos::bytesConstRef(_codeData.data(), _codeData.size()));
                 }
             }
             else
@@ -893,9 +892,8 @@ void JsonRpcImpl_2_0::getCode(std::string const& _groupID, std::string const& _n
             }
 
             Json::Value jResp = code;
-            _respFunc(_error, jResp);
+            callback(_error, jResp);
         });
-#endif
 }
 
 void JsonRpcImpl_2_0::getSealerList(
